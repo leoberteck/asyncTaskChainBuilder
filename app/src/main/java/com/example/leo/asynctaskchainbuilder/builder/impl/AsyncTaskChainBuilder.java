@@ -42,10 +42,14 @@ public class AsyncTaskChainBuilder implements IAsyncTaskChainBuilder {
     public AsyncTaskChainBuilder finishWith(ITaskFinishListener listener){
         buidingTask.setOnFinishListener(listener);
         nodeList.add(buidingTask);
+        buidingTask = null;
         return this;
     }
 
     public void executeChain(){
+        if(buidingTask != null){
+            nodeList.add(buidingTask);
+        }
         if(nodeList.size() > 0){
             nodeList.get(0).execute();
         }

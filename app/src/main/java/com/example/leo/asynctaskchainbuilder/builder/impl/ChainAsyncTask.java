@@ -17,4 +17,12 @@ public abstract class ChainAsyncTask<Params, Progress, Result> extends AsyncTask
     public void setAsyncTaskFinishListener(ITaskFinishListener listener) {
         onFinishListener = listener;
     }
+
+    @Override
+    protected void onPostExecute(Result result) {
+        super.onPostExecute(result);
+        if(onFinishListener != null){
+            onFinishListener.onTaskFinish();
+        }
+    }
 }
