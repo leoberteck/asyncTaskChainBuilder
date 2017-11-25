@@ -15,15 +15,11 @@ import java.util.Random;
 
 import static com.example.leo.asynctaskchainbuilder.mvp.interfaces.MainActivityMvp.*;
 
-/**
- * Created by Leonardo on 10-Aug-17.
- */
-
 public class MainPresenter extends BaseObservable implements IMainPresenter, IProgressListener {
 
-    private final Integer MIN = 1;
-    private final Integer MAX = 15;
-    Random rand = new Random();
+    private final static int MIN = 1;
+    private final static int MAX = 15;
+    private final static Random rand = new Random();
 
     private WeakReference<MainActivityMvp.IMainActivity> mainActivityWeakReference;
 
@@ -32,25 +28,26 @@ public class MainPresenter extends BaseObservable implements IMainPresenter, IPr
 
     @Override
     public void setMainActivity(IMainActivity mainActivity){
-        mainActivityWeakReference = new WeakReference<MainActivityMvp.IMainActivity>(mainActivity);
+        mainActivityWeakReference = new WeakReference<>(mainActivity);
     }
 
     public void generateNumbers(){
         listNumbers.clear();
         isButtonEnabled.set(false);
         new AsyncTaskChainBuilder()
+            //Primeira linha
             .startWith(new RandomCounterAsyncTask(this))
                 .withParameters(generateRandomSeed)
-                .withExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
+            //Segunda linha
             .thenExecute(new RandomCounterAsyncTask(this))
                 .withParameters(generateRandomSeed)
-                .withExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
+            //Terceira linha
             .thenExecute(new RandomCounterAsyncTask(this))
                 .withParameters(generateRandomSeed)
-                .withExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
+            //Quarta linha
             .thenExecute(new RandomCounterAsyncTask(this))
                 .withParameters(generateRandomSeed)
-                .withExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
+            //Fim do processo
             .finishWith(new ITaskFinishListener() {
                 @Override
                 public void onTaskFinish() {
@@ -60,15 +57,16 @@ public class MainPresenter extends BaseObservable implements IMainPresenter, IPr
             .executeChain();
     }
 
+    //Prove os parametros da AsyncTask no momento da sua execucao
     private AsyncTaskChainBuilder.IArgumentProvider generateRandomSeed = new AsyncTaskChainBuilder.IArgumentProvider() {
         @Override
         public Object[] provide() {
             return new Object[]{
-                rand.nextInt((MAX - MIN) + 1) + MIN
-                , rand.nextInt((MAX - MIN) + 1) + MIN
-                , rand.nextInt((MAX - MIN) + 1) + MIN
-                , rand.nextInt((MAX - MIN) + 1) + MIN
-                , rand.nextInt((MAX - MIN) + 1) + MIN
+                getRandomNumber()
+                , getRandomNumber()
+                , getRandomNumber()
+                , getRandomNumber()
+                , getRandomNumber()
             };
         }
     };
@@ -78,25 +76,29 @@ public class MainPresenter extends BaseObservable implements IMainPresenter, IPr
         listNumbers.add(result);
     }
 
-    private class RandomCounterAsyncTask extends ChainAsyncTask<Object, Integer, Void> {
+    private static class RandomCounterAsyncTask extends ChainAsyncTask<Object, Integer, Void> {
 
         private IProgressListener listeningActivity;
 
-        public RandomCounterAsyncTask(IProgressListener listeningActivity) {
+        RandomCounterAsyncTask(IProgressListener listeningActivity) {
             this.listeningActivity = listeningActivity;
         }
 
         @Override
         protected Void doInBackground(Object... objects) {
+            //Le os argumentos passados pelo argument provider
             Integer int1 = (Integer) objects[0];
             Integer int2 = (Integer) objects[1];
             Integer int3 = (Integer) objects[2];
             Integer int4 = (Integer) objects[3];
             Integer int5 = (Integer) objects[4];
 
+            //Gera mais 5 numeros randomicos atraves da soma dos parametros divida por outro numero randomico
             for (int x = 0; x < 5; x++) {
-                Integer div = rand.nextInt((MAX - MIN) + 1) + MIN;
-                registerProgress((int1 + int2 + int3 + int4 + int5) / div);
+                Integer div = getRandomNumber();
+                //Registra o progresso na thread da view
+                onProgressUpdate((int1 + int2 + int3 + int4 + int5) / div);
+                //Coloquei um delay aqui porque se nao fica muito rapido hahahahha
                 try {
                     Thread.sleep(200);
                 } catch (InterruptedException e) {
@@ -111,5 +113,9 @@ public class MainPresenter extends BaseObservable implements IMainPresenter, IPr
         protected void onProgressUpdate(Integer... values) {
             listeningActivity.registerProgress(values[0]);
         }
+    }
+
+    private static int getRandomNumber(){
+        return rand.nextInt((MAX - MIN) + 1) + MIN;
     }
 }
